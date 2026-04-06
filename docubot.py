@@ -65,23 +65,19 @@ class DocuBot:
     # Index Construction (Phase 1)
     # -----------------------------------------------------------
 
-    def build_index(self, documents):
+    def build_index(self, chunks):
         """
-        TODO (Phase 1):
-        Build a tiny inverted index mapping lowercase words to the documents
-        they appear in.
-
-        Example structure:
-        {
-            "token": ["AUTH.md", "API_REFERENCE.md"],
-            "database": ["DATABASE.md"]
-        }
-
-        Keep this simple: split on whitespace, lowercase tokens,
-        ignore punctuation if needed.
+        Build an inverted index mapping lowercase words to chunk indices.
+        This allows precise retrieval of chunks containing specific words.
         """
         index = {}
-        # TODO: implement simple indexing
+        for i, (filename, text) in enumerate(chunks):
+            for token in text.lower().split():
+                token = token.strip(".,!?;:\"'()[]{}")
+                if token:
+                    if token not in index:
+                        index[token] = []
+                    index[token].append(i)
         return index
 
     # -----------------------------------------------------------
@@ -101,16 +97,26 @@ class DocuBot:
         # TODO: implement scoring
         return 0
 
-    def retrieve(self, query, top_k=3):
+    def retrieve(self, query, top_k=3, min_score=0.4):
         """
-        TODO (Phase 1):
-        Use the index and scoring function to select top_k relevant document snippets.
+        Use the index to find candidate chunks containing query words,
+        score them, and return top_k relevant snippets.
+        """
+        candidates = set()
+        for word in query.lower().split():
+            word = word.strip(".,!?;:\"'()[]{}")
+            for i in self.index.get(word, []):
+                candidates.add(i)
 
-        Return a list of (filename, text) sorted by score descending.
-        """
         results = []
-        # TODO: implement retrieval logic
-        return results[:top_k]
+        for i in candidates:
+            filename, text = self.chunks[i]
+            score = self.score_document(query, text)
+            if score >= min_score:
+                results.append((filename, text, score))
+
+        results.sort(key=lambda x: x[2], reverse=True)
+        return [(filename, text) for filename, text, _ in results[:top_k]]
 
     # -----------------------------------------------------------
     # Answering Modes
