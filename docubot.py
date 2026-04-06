@@ -8,6 +8,7 @@ Core DocuBot class responsible for:
 """
 
 import os
+import re
 import glob
 
 class DocuBot:
@@ -22,8 +23,15 @@ class DocuBot:
         # Load documents into memory
         self.documents = self.load_documents()  # List of (filename, text)
 
-        # Build a retrieval index (implemented in Phase 1)
-        self.index = self.build_index(self.documents)
+        # Split documents into heading-based chunks
+        self.chunks = [
+            chunk
+            for filename, text in self.documents
+            for chunk in self.chunk_document(text, filename)
+        ]
+
+        # Build a retrieval index over chunks (implemented in Phase 1)
+        self.index = self.build_index(self.chunks)
 
     # -----------------------------------------------------------
     # Document Loading
@@ -43,6 +51,15 @@ class DocuBot:
                 filename = os.path.basename(path)
                 docs.append((filename, text))
         return docs
+
+    # -----------------------------------------------------------
+    # Chunking
+    # -----------------------------------------------------------
+
+    def chunk_document(self, text, filename):
+        """Split text on double newlines (paragraphs) into sections for more precise retrieval."""
+        sections = re.split(r'\n\n+', text)
+        return [(filename, s.strip()) for s in sections if s.strip()]
 
     # -----------------------------------------------------------
     # Index Construction (Phase 1)
