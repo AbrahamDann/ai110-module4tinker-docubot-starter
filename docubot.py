@@ -86,18 +86,13 @@ class DocuBot:
 
     def score_document(self, query, text):
         """
-        TODO (Phase 1):
-        Return a simple relevance score for how well the text matches the query.
-
-        Suggested baseline:
-        - Convert query into lowercase words
-        - Count how many appear in the text
-        - Return the count as the score
+        Return a relevance score as the ratio of matching query words to total query words.
+        This normalizes for query length and provides a score between 0 and 1.
         """
-        # TODO: implement scoring
-        return 0
-
-    def retrieve(self, query, top_k=3, min_score=0.4):
+        text_words = set(text.lower().split())
+        query_words = set(query.lower().split())  # Use set to avoid double counting
+        matching = sum(1 for word in query_words if word in text_words)
+        return matching / len(query_words) if query_words else 0
         """
         Use the index to find candidate chunks containing query words,
         score them, and return top_k relevant snippets.
